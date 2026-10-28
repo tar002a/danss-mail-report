@@ -1,0 +1,38 @@
+name: Daily mail-flow report
+
+on:
+  schedule:
+    - cron: "0 17 * * *"  # 20:00 Baghdad (UTC+3, no DST)
+  workflow_dispatch:
+    inputs:
+      window_end:
+        description: 'End of the 24-hour window: "now", an ISO time, or blank for the last 20:00'
+        required: false
+        default: ""
+
+permissions:
+  id-token: write  # OIDC sign-in to Microsoft Entra, no stored secret
+  contents: read
+
+concurrency:
+  group: daily-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet openpyxl==3.1.5
+      - run: python report.py
+        env:
+          TENANT_ID: ${{ vars.TENANT_ID }}
+          CLIENT_ID: ${{ vars.CLIENT_ID }}
+          REPORT_SENDER: ${{ vars.REPORT_SENDER }}
+          REPORT_TO: ${{ vars.REPORT_TO }}
+          INTERNAL_DOMAINS: ${{ vars.INTERNAL_DOMAINS }}
+          WINDOW_END: ${{ inputs.window_end }}
