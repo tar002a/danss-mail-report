@@ -364,9 +364,8 @@ def main():
     }
     graph(token, f"{GRAPH}/v1.0/users/{urllib.parse.quote(SENDER)}/sendMail",
           {"message": message, "saveToSentItems": False})
-    # Counts only: addresses and subjects stay out of the Actions log.
-    print(f"Sent report for {start:%Y-%m-%d %H:%M} to {end:%Y-%m-%d %H:%M}: "
-          f"{len(rows)} records, {kpi['Flagged']} flagged, {len(boxes)} mailboxes")
+    # The repo is public, so the Actions log carries no mail data, not even counts.
+    print(f"Report sent for the window ending {end:%Y-%m-%d %H:%M}")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ on:
 permissions:
   id-token: write  # OIDC sign-in to Microsoft Entra, no stored secret
   contents: read
+  actions: write   # keep-alive below
 
 concurrency:
   group: daily-report
@@ -36,3 +37,10 @@ jobs:
           REPORT_TO: ${{ vars.REPORT_TO }}
           INTERNAL_DOMAINS: ${{ vars.INTERNAL_DOMAINS }}
           WINDOW_END: ${{ inputs.window_end }}
+      # GitHub disables schedules in public repos after 60 days without activity;
+      # re-enabling the workflow resets that timer.
+      - name: Keep schedule alive
+        if: always()
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/daily-report.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}
