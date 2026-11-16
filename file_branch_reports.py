@@ -47,9 +47,9 @@ def matching_messages(token):
         for m in page.get("value", []):
             scanned += 1
             sender = ((m.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
-            if DRY_RUN and "خزائن" in (m.get("subject") or "") and scanned <= 400:
-                print("  diag:", repr(sender), ascii((m.get("subject") or "")[:12]), ascii(SUBJECT_PREFIX[:12]))
-            if sender == MAILBOX.lower() and (m.get("subject") or "").strip().startswith(SUBJECT_PREFIX):
+            # Copies sent inside Exchange carry the mailbox's legacy DN (/o=exchangelabs/...)
+            # instead of its SMTP address; both mean "sent from this mailbox".
+            if (sender == MAILBOX.lower() or sender.startswith("/o=")) and (m.get("subject") or "").strip().startswith(SUBJECT_PREFIX):
                 yield m
         url = page.get("@odata.nextLink")
     if DRY_RUN:
