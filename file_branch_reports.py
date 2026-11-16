@@ -49,7 +49,7 @@ def matching_messages(token):
             sender = ((m.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
             # Copies sent inside Exchange carry the mailbox's legacy DN (/o=exchangelabs/...)
             # instead of its SMTP address; both mean "sent from this mailbox".
-            if (sender == MAILBOX.lower() or sender.startswith("/o=")) and (m.get("subject") or "").strip().startswith(SUBJECT_PREFIX):
+            if (sender == MAILBOX.lower() or sender.startswith("/o=")) and SUBJECT_PREFIX in (m.get("subject") or ""):  # also test copies "نسخة تجريبية | ..."
                 yield m
         url = page.get("@odata.nextLink")
     if DRY_RUN:
