@@ -1,0 +1,46 @@
+name: File branch-cash reports (info@ Sent Items)
+
+on:
+  schedule:
+    - cron: "30 15 * * *"  # 18:30 Baghdad, after ERPNext sends the 18:00 report
+    - cron: "0 20 * * *"   # 23:00 Baghdad, catch-up for late or resent reports
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List what would move, change nothing"
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write  # OIDC sign-in to Microsoft Entra, no stored secret
+  contents: read
+  actions: write   # keep-alive below
+
+concurrency:
+  group: file-branch-reports
+  cancel-in-progress: false
+
+jobs:
+  file:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet --require-hashes --no-deps -r requirements.txt
+      - run: python file_branch_reports.py
+        env:
+          TENANT_ID: ${{ vars.TENANT_ID }}
+          CLIENT_ID: ${{ vars.CLIENT_ID }}
+          REPORT_SENDER: ${{ vars.REPORT_SENDER }}
+          REPORT_TO: ${{ vars.REPORT_TO }}
+          DRY_RUN: ${{ inputs.dry_run }}
+      - name: Keep schedule alive
+        if: always()
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/file-branch-reports.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -67,6 +67,17 @@ Step "Application Mail.Send limited to that scope" {
     New-ManagementRoleAssignment -App $AppId -Role "Application Mail.Send" -CustomResourceScope $ScopeName
 }
 
+# Branch-cash report filing (file_branch_reports.py): read/write on info@ only,
+# so the job can create the Sent Items subfolder and move the reports into it.
+$FilingMailbox = "info@diri-alnassir.iq"
+$FilingScope   = "DANSS Branch Reports Filing"
+Step "Management scope '$FilingScope' ($FilingMailbox only)" {
+    New-ManagementScope -Name $FilingScope -RecipientRestrictionFilter "PrimarySmtpAddress -eq '$FilingMailbox'"
+}
+Step "Application Mail.ReadWrite limited to that scope" {
+    New-ManagementRoleAssignment -App $AppId -Role "Application Mail.ReadWrite" -CustomResourceScope $FilingScope
+}
+
 Write-Host "`nCheck: the app should be InScope=True for $Mailbox only."
 Test-ServicePrincipalAuthorization -Identity $AppId -Resource $Mailbox |
     Format-Table RoleName, GrantedPermissions, AllowedResourceScope, InScope -AutoSize
