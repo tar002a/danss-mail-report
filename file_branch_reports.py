@@ -41,13 +41,19 @@ def ensure_folder(token):
 def matching_messages(token):
     url = f"{BOX}/mailFolders/sentitems/messages?" + urllib.parse.urlencode(
         {"$select": "id,subject,from,sentDateTime", "$top": "200"})
+    scanned = 0
     while url:
         page = graph(token, url)
         for m in page.get("value", []):
+            scanned += 1
             sender = ((m.get("from") or {}).get("emailAddress") or {}).get("address", "").lower()
+            if DRY_RUN and "خزائن" in (m.get("subject") or "") and scanned <= 400:
+                print("  diag:", repr(sender), ascii((m.get("subject") or "")[:12]), ascii(SUBJECT_PREFIX[:12]))
             if sender == MAILBOX.lower() and (m.get("subject") or "").strip().startswith(SUBJECT_PREFIX):
                 yield m
         url = page.get("@odata.nextLink")
+    if DRY_RUN:
+        print(f"Scanned {scanned} messages in Sent Items.")
 
 
 def main():
